@@ -17,6 +17,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.converter.GenericMessageConverter;
+import org.springframework.messaging.support.GenericMessage;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 
@@ -57,8 +58,7 @@ public class OtmbItConfig {
             final ZeroMqProxy proxy
     ) {
         ZeroMqChannel channel = new ZeroMqChannel(context, true);
-        channel.setConnectUrl("tcp://localhost:" + proxy.getFrontendPort() + ':' + proxy.getBackendPort());
-        //channel.setZeroMqProxy(proxy);
+        channel.setZeroMqProxy(proxy);
         channel.setConsumeDelay(Duration.ofMillis(100));
         channel.setMessageConverter(new GenericMessageConverter());
         EmbeddedJsonHeadersMessageMapper mapper = new EmbeddedJsonHeadersMessageMapper(otmbItDataMapper.getObjectMapper());
@@ -77,23 +77,24 @@ public class OtmbItConfig {
     @ServiceActivator(inputChannel = "zeroMqPubChannel")
     public ZeroMqMessageHandler zeroMqMessageHandler(ZContext context) {
         ZeroMqMessageHandler messageHandler =
-                new ZeroMqMessageHandler(context, "tcp://localhost:6060", SocketType.PUB);
+                new ZeroMqMessageHandler(context, "inproc://vip", SocketType.PUB);
         messageHandler.setTopicExpression(
-                new FunctionExpression<Message<?>>((message) -> message.getHeaders().get("topic")));
+                new FunctionExpression<Message<?>>((message) -> message.getHeaders().get("dnp3/point")));
         messageHandler.setMessageMapper(new EmbeddedJsonHeadersMessageMapper());
-
+        
         return messageHandler;
     }
+     */
 
     @Bean
     public ZeroMqMessageProducer zeroMqMessageProducer(ZContext context, @Qualifier("zeroMqPubChannel") MessageChannel outputChannel) {
         ZeroMqMessageProducer messageProducer = new ZeroMqMessageProducer(context, SocketType.SUB);
+        messageProducer.setConnectUrl("inproc://vip");
         messageProducer.setOutputChannel(outputChannel);
-        messageProducer.setTopics("topic");
+        messageProducer.setTopics("dnp3/point");
         messageProducer.setReceiveRaw(true);
-        messageProducer.setBindPort(6060);
+        //messageProducer.setBindPort(6060);
         messageProducer.setConsumeDelay(Duration.ofMillis(100));
         return messageProducer;
     }
-     */
 }
