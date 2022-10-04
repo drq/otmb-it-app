@@ -57,8 +57,8 @@ public class OtmbItConfig {
             final ZeroMqProxy proxy
     ) {
         ZeroMqChannel channel = new ZeroMqChannel(context, true);
-        //channel.setConnectUrl("tcp://localhost:" + proxy.getFrontendPort() + ':' + proxy.getBackendPort());
-        channel.setZeroMqProxy(proxy);
+        channel.setConnectUrl("tcp://localhost:" + proxy.getFrontendPort() + ':' + proxy.getBackendPort());
+        //channel.setZeroMqProxy(proxy);
         channel.setConsumeDelay(Duration.ofMillis(100));
         channel.setMessageConverter(new GenericMessageConverter());
         EmbeddedJsonHeadersMessageMapper mapper = new EmbeddedJsonHeadersMessageMapper(otmbItDataMapper.getObjectMapper());
