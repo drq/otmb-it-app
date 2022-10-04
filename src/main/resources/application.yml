@@ -1,3 +1,8 @@
 spring:
   application:
     name: OtmbItApp
+zmq:
+  channel:
+    port:
+      frontend: 6001
+      backend: 6002

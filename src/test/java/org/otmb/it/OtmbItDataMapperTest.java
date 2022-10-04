@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -14,8 +15,9 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@SpringBootTest
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = OtmbItTestConfig.class)
+@ContextConfiguration(classes = TestApp.class)
 public class OtmbItDataMapperTest {
     private static final Logger logger = LoggerFactory.getLogger(OtmbItDataMapperTest.class);
 
