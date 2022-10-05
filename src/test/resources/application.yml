@@ -6,3 +6,6 @@ zmq:
     port:
       frontend: 6001
       backend: 6002
+logging:
+  level:
+    org.springframework.integration: debug
