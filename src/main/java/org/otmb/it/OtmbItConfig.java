@@ -116,7 +116,7 @@ public class OtmbItConfig {
         logger.info("Listening topic {} at {}", topic, url);
 
         ZeroMqMessageProducer messageProducer = new ZeroMqMessageProducer(context, SocketType.SUB);
-        messageProducer.setConnectUrl(url);
+        //messageProducer.setConnectUrl(url);
         messageProducer.setOutputChannel(fluxMessageChannel);
         messageProducer.setTopics(topic);
         messageProducer.setSocketConfigurer(socket -> socket.bind(url));

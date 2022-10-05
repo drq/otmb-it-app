@@ -88,8 +88,11 @@ public class ZeroMqTest {
         assertTrue(zeroMqMessageHandler.isRunning(), "zeroMqMessageHandler must be running");
         assertTrue(zeroMqMessageProducer.isRunning(), "zeroMqMessageProducer must be running");
 
-        Message<?> testMessage = MessageBuilder.withPayload("test").setHeader("topic", topic).build();
+        Message<?> testMessage = MessageBuilder.withPayload("test").setHeader("topic", "foo").build();
         zeroMqMessageHandler.handleMessage(testMessage).subscribe();
+
+        Message<?> testMessage2 = MessageBuilder.withPayload("test2").setHeader("topic", topic).build();
+        zeroMqMessageHandler.handleMessage(testMessage2).subscribe();
 
         try {
             Thread.sleep(3000);
