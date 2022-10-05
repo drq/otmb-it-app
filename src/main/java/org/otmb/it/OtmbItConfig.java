@@ -97,6 +97,9 @@ public class OtmbItConfig {
         logger.info("Publishing at {}", url);
 
         ZeroMqMessageHandler messageHandler = new ZeroMqMessageHandler(context, url, SocketType.PUB);
+        messageHandler.setSocketConfigurer(socket -> {
+            socket.connect(url);
+        });
         messageHandler.setTopicExpression(
                 new FunctionExpression<Message<?>>((message) -> message.getHeaders().get("topic"))
         );
@@ -119,7 +122,9 @@ public class OtmbItConfig {
         //messageProducer.setConnectUrl(url);
         messageProducer.setOutputChannel(fluxMessageChannel);
         messageProducer.setTopics(topic);
-        messageProducer.setSocketConfigurer(socket -> socket.bind(url));
+        messageProducer.setSocketConfigurer(socket -> {
+            socket.connect(url);
+        });
         //messageProducer.setReceiveRaw(true);
         messageProducer.setMessageMapper((object, headers) -> {
             logger.debug("Received: {}, {}", object, headers);
