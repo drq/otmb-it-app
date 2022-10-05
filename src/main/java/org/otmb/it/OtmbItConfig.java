@@ -21,6 +21,7 @@ import org.springframework.messaging.converter.GenericMessageConverter;
 import org.springframework.messaging.support.GenericMessage;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
+import org.zeromq.ZMQ;
 
 import java.time.Duration;
 
@@ -74,41 +75,58 @@ public class OtmbItConfig {
     }
 
     @Bean
-    @ServiceActivator(inputChannel = "testMessageChannel")
+    @ServiceActivator(inputChannel = "fluxMessageChannel")
     public MessageHandler subscribe2() {
-        return message -> logger.info("Received message: {}", message);
+        return message -> {
+            logger.info("fluxMessageChannel Received message: {}", message);
+        };
+    }
+
+    @Bean(name = "fluxMessageChannel")
+    public MessageChannel fluxMessageChannel() {
+        return new FluxMessageChannel();
     }
 
     @Bean
+    @ServiceActivator(inputChannel = "fluxMessageChannel")
     public ZeroMqMessageHandler zeroMqMessageHandler(
             final ZContext context,
-            final OtmbItDataMapper otmbItDataMapper
+            final OtmbItDataMapper otmbItDataMapper,
+            @Value("${zmq.channel.url}") String url
     ) {
-        ZeroMqMessageHandler messageHandler =
-                new ZeroMqMessageHandler(context, "inproc://vip", SocketType.PUB);
+        logger.info("Publishing at {}", url);
+
+        ZeroMqMessageHandler messageHandler = new ZeroMqMessageHandler(context, url, SocketType.PUB);
         messageHandler.setTopicExpression(
-                new FunctionExpression<Message<?>>((message) -> message.getHeaders().get("topic")));
+                new FunctionExpression<Message<?>>((message) -> message.getHeaders().get("topic"))
+        );
         messageHandler.setMessageMapper(new EmbeddedJsonHeadersMessageMapper(otmbItDataMapper.getObjectMapper()));
 
         return messageHandler;
     }
 
-    @Bean(name = "testMessageChannel")
-    public MessageChannel testMessageChannel() {
-        return new FluxMessageChannel();
-    }
-
     @Bean
-    public ZeroMqMessageProducer zeroMqMessageProducer(final ZContext context, @Qualifier("testMessageChannel") final MessageChannel testMessageChannel) {
-        ZeroMqMessageProducer messageProducer = new ZeroMqMessageProducer(context, SocketType.SUB);
-        messageProducer.setConnectUrl("inproc://vip");
-        messageProducer.setOutputChannel(testMessageChannel);
-        //messageProducer.setTopics("dnp3/point");
-        messageProducer.setReceiveRaw(true);
-        messageProducer.setConsumeDelay(Duration.ofMillis(100));
+    public ZeroMqMessageProducer zeroMqMessageProducer(
+            final ZContext context,
+            @Qualifier("fluxMessageChannel") final MessageChannel fluxMessageChannel,
+            final OtmbItDataMapper otmbItDataMapper,
+            @Value("${zmq.channel.url}") String url,
+            @Value("${zmq.channel.topic}") String topic
+    ) {
+        logger.info("Listening topic {} at {}", topic, url);
 
-        messageProducer.start();
-        messageProducer.subscribeToTopics("topic/dnp3/point");
+        ZeroMqMessageProducer messageProducer = new ZeroMqMessageProducer(context, SocketType.SUB);
+        messageProducer.setConnectUrl(url);
+        messageProducer.setOutputChannel(fluxMessageChannel);
+        messageProducer.setTopics(topic);
+        messageProducer.setSocketConfigurer(socket -> socket.bind(url));
+        //messageProducer.setReceiveRaw(true);
+        messageProducer.setMessageMapper((object, headers) -> {
+            logger.debug("Received: {}, {}", object, headers);
+            return new GenericMessage<>(new String(object));
+        });
+        //messageProducer.setMessageMapper(new EmbeddedJsonHeadersMessageMapper(otmbItDataMapper.getObjectMapper()));
+        messageProducer.setConsumeDelay(Duration.ofMillis(100));
 
         return messageProducer;
     }

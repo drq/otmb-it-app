@@ -3,6 +3,12 @@ spring:
     name: OtmbItApp
 zmq:
   channel:
+    url: inproc://vip
+    topic: dnp3/point
     port:
       frontend: 6001
       backend: 6002
+logging:
+  level:
+    org.otmb: debug
+    org.springframework.integration: debug
