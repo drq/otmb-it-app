@@ -108,7 +108,7 @@ public class OtmbItConfig {
         messageProducer.setConsumeDelay(Duration.ofMillis(100));
 
         messageProducer.start();
-        messageProducer.subscribeToTopics("dnp3/point");
+        messageProducer.subscribeToTopics("topic/dnp3/point");
 
         return messageProducer;
     }
