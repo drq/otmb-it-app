@@ -31,7 +31,7 @@ public class OtmbItPublisher {
     @Scheduled(fixedDelay = 60000, initialDelay = 10000)
     public void scheduleMessagePublishTask() {
         Map<String, Object> controlMessage = new HashMap<>();
-        controlMessage.put("DCTE.RtnDlyTmms.AO10", 15);
+        controlMessage.put("DCTE.WinTms.AI55", 15);
         try {
             logger.info("=================================================================================");
             logger.info("Publishing message {} to {}", otmbItDataMapper.toMapJson(controlMessage), pubTopic);
