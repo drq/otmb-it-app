@@ -44,8 +44,15 @@ public class OtmbItConfig {
     @ServiceActivator(inputChannel = "fluxMessageChannel")
     public MessageHandler subscribe2() {
         return message -> {
+            Object payload = message.getPayload();
             logger.info("=================================================================================");
             logger.info("Received message: {} with headers {}", message.getPayload(), message.getHeaders());
+            if (payload instanceof Map<?,?>) {
+                Map<String, Object> map = (Map<String, Object>) payload;
+                for (String key : map.keySet()) {
+                    logger.info("Key: {}, Value: {}", key, map.get(key));
+                }
+            }
             logger.info("=================================================================================");
         };
     }

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_SINGLE_QUOTES;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 
 @Getter
@@ -23,6 +24,7 @@ public class OtmbItDataMapper {
     public OtmbItDataMapper() {
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.objectMapper.configure(ALLOW_SINGLE_QUOTES, true);
         this.objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
