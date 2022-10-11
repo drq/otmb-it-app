@@ -40,7 +40,8 @@ public class OtmbItDataMapper {
 
     public Map<String, Object> fromMapJson(String json) throws JsonProcessingException {
         TypeReference<HashMap<String, Object>> typeRef
-                = new TypeReference<HashMap<String, Object>>() {};
+                = new TypeReference<HashMap<String, Object>>() {
+        };
         return this.objectMapper.readValue(json, typeRef);
     }
 }

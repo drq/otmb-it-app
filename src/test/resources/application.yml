@@ -5,9 +5,8 @@ zmq:
   channel:
     url: tcp://127.0.0.1:55555
     topic: point
-    port:
-      frontend: 6001
-      backend: 6002
+    pubUrl: tcp://*:55556
+    pubTopic: control
 logging:
   level:
     org.springframework.integration: debug

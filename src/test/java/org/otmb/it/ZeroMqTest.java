@@ -1,5 +1,6 @@
 package org.otmb.it;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +21,9 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMsg;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
@@ -34,11 +38,15 @@ public class ZeroMqTest {
 
     @Value("${zmq.channel.topic}")
     private String topic;
-    @Autowired
-    private ZContext zContext;
+
+    @Value("${zmq.channel.pubTopic}")
+    private String pubTopic;
 
     @Autowired
-    private ZeroMqChannel zeroMqPubChannel;
+    private OtmbItDataMapper otmbItDataMapper;
+
+    @Autowired
+    private ZContext zContext;
 
     @Autowired
     private ZeroMqMessageHandler zeroMqMessageHandler;
@@ -48,17 +56,6 @@ public class ZeroMqTest {
 
     @BeforeAll
     static void beforeAll() {
-    }
-
-    @Test
-    void testPubSub() {
-        Message<?> testMessage = MessageBuilder.withPayload("{\"key\": \"value\"}").setHeader("topic", topic).build();
-        zeroMqPubChannel.send(testMessage);
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-
-        }
     }
 
 /*
@@ -84,18 +81,15 @@ public class ZeroMqTest {
  */
 
     @Test
-    void testPubSub3() {
-        assertTrue(zeroMqMessageHandler.isRunning(), "zeroMqMessageHandler must be running");
-        assertTrue(zeroMqMessageProducer.isRunning(), "zeroMqMessageProducer must be running");
+    void testPubSub3() throws JsonProcessingException {
+        Map<String, Object> controlMessage = new HashMap<>();
+        controlMessage.put("foo", "bar");
 
-        Message<?> testMessage = MessageBuilder.withPayload("test").setHeader("topic", "foo").build();
+        Message<?> testMessage = MessageBuilder.withPayload(otmbItDataMapper.toMapJson(controlMessage)).setHeader("topic", pubTopic).build();
         zeroMqMessageHandler.handleMessage(testMessage).subscribe();
 
-        Message<?> testMessage2 = MessageBuilder.withPayload("test2").setHeader("topic", topic).build();
-        zeroMqMessageHandler.handleMessage(testMessage2).subscribe();
-
         try {
-            Thread.sleep(3000);
+            Thread.sleep(15000);
         } catch (InterruptedException e) {
 
         }

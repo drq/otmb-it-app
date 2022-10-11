@@ -1,5 +1,6 @@
 package org.otmb.it;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -10,22 +11,22 @@ import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.FluxMessageChannel;
 import org.springframework.integration.expression.FunctionExpression;
 import org.springframework.integration.support.json.EmbeddedJsonHeadersMessageMapper;
-import org.springframework.integration.zeromq.ZeroMqProxy;
-import org.springframework.integration.zeromq.channel.ZeroMqChannel;
 import org.springframework.integration.zeromq.inbound.ZeroMqMessageProducer;
 import org.springframework.integration.zeromq.outbound.ZeroMqMessageHandler;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
-import org.springframework.messaging.converter.GenericMessageConverter;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
-import org.zeromq.ZMQ;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
+@EnableScheduling
 public class OtmbItConfig {
     private static final Logger logger = LoggerFactory.getLogger(OtmbItConfig.class);
 
@@ -40,45 +41,12 @@ public class OtmbItConfig {
     }
 
     @Bean
-    public ZeroMqProxy zeroMqProxy(
-            final ZContext context,
-            @Value("${zmq.channel.port.frontend}") int frontendPort,
-            @Value("${zmq.channel.port.backend}") int backendPort
-    ) {
-        ZeroMqProxy proxy = new ZeroMqProxy(context, ZeroMqProxy.Type.SUB_PUB);
-        proxy.setExposeCaptureSocket(true);
-        proxy.setFrontendPort(frontendPort);
-        proxy.setBackendPort(backendPort);
-
-        return proxy;
-    }
-
-    @Bean(name = "zeroMqPubChannel")
-    ZeroMqChannel zeroMqPubChannel(
-            final ZContext context,
-            final OtmbItDataMapper otmbItDataMapper,
-            final ZeroMqProxy proxy
-    ) {
-        ZeroMqChannel channel = new ZeroMqChannel(context, true);
-        channel.setZeroMqProxy(proxy);
-        channel.setConsumeDelay(Duration.ofMillis(100));
-        channel.setMessageConverter(new GenericMessageConverter());
-        EmbeddedJsonHeadersMessageMapper mapper = new EmbeddedJsonHeadersMessageMapper(otmbItDataMapper.getObjectMapper());
-        channel.setMessageMapper(mapper);
-        return channel;
-    }
-
-    @Bean
-    @ServiceActivator(inputChannel = "zeroMqPubChannel")
-    public MessageHandler subscribe() {
-        return message -> logger.info("Received message: {}", message);
-    }
-
-    @Bean
     @ServiceActivator(inputChannel = "fluxMessageChannel")
     public MessageHandler subscribe2() {
         return message -> {
-            logger.info("fluxMessageChannel Received message: {}", message);
+            logger.info("=================================================================================");
+            logger.info("Received message: {} with headers {}", message.getPayload(), message.getHeaders());
+            logger.info("=================================================================================");
         };
     }
 
@@ -88,20 +56,19 @@ public class OtmbItConfig {
     }
 
     @Bean
-    @ServiceActivator(inputChannel = "fluxMessageChannel")
     public ZeroMqMessageHandler zeroMqMessageHandler(
             final ZContext context,
             final OtmbItDataMapper otmbItDataMapper,
-            @Value("${zmq.channel.url}") String url
+            @Value("${zmq.channel.pubUrl}") String url
     ) {
         logger.info("Publishing at {}", url);
 
         ZeroMqMessageHandler messageHandler = new ZeroMqMessageHandler(context, url, SocketType.PUB);
-        /*
+
         messageHandler.setSocketConfigurer(socket -> {
             socket.bind(url);
         });
-         */
+
         messageHandler.setTopicExpression(
                 new FunctionExpression<Message<?>>((message) -> message.getHeaders().get("topic"))
         );
@@ -124,19 +91,24 @@ public class OtmbItConfig {
         messageProducer.setConnectUrl(url);
         messageProducer.setOutputChannel(fluxMessageChannel);
         messageProducer.setTopics(topic);
-        /*
-        messageProducer.setSocketConfigurer(socket -> {
-            socket.connect(url);
-        });
-         */
-        //messageProducer.setReceiveRaw(true);
         messageProducer.setMessageMapper((object, headers) -> {
-            logger.debug("Received: {}, {}", object, headers);
-            return new GenericMessage<>(new String(object));
+            String payload = new String(object);
+            int index = payload.indexOf(" ");
+            String messageTopic = payload.substring(0, index);
+            String json = payload.substring(index + 1);
+            Map<String, Object> jsonObj = null;
+            try {
+                jsonObj = otmbItDataMapper.fromMapJson(json);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+            Map<String, Object> messageHeaders = new HashMap<>();
+            messageHeaders.put("topic", messageTopic);
+            return new GenericMessage<>(jsonObj, messageHeaders);
         });
-        //messageProducer.setMessageMapper(new EmbeddedJsonHeadersMessageMapper(otmbItDataMapper.getObjectMapper()));
         messageProducer.setConsumeDelay(Duration.ofMillis(100));
 
         return messageProducer;
     }
+
 }
