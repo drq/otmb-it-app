@@ -31,7 +31,7 @@ public class OtmbItPublisher {
         this.zeroMqMessageHandler = zeroMqMessageHandler;
     }
 
-    @Scheduled(fixedDelay = 30000, initialDelay = 30000)
+    @Scheduled(fixedDelay = 30000, initialDelay = 10000)
     public void scheduleMessagePublishTask() {
         try {
             logger.info("=================================================================================");
