@@ -72,9 +72,11 @@ public class OtmbItConfig {
 
         ZeroMqMessageHandler messageHandler = new ZeroMqMessageHandler(context, url, SocketType.PUB);
 
+        /*
         messageHandler.setSocketConfigurer(socket -> {
             socket.bind(url);
         });
+         */
 
         messageHandler.setTopicExpression(
                 new FunctionExpression<Message<?>>((message) -> message.getHeaders().get("topic"))

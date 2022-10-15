@@ -5,7 +5,7 @@ zmq:
   channel:
     url: tcp://127.0.0.1:55555
     topic: point
-    pubUrl: tcp://*:55556
+    pubUrl: tcp://127.0.0.1:55556
     pubTopic: control
 logging:
   level:
