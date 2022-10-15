@@ -7,6 +7,7 @@ zmq:
     topic: point
     pubUrl: tcp://127.0.0.1:55556
     pubTopic: control
+  payload: '{"DCTE.WinTms.AI55": 15}'
 logging:
   level:
     org.otmb: debug

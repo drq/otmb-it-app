@@ -23,20 +23,21 @@ public class OtmbItPublisher {
     @Value("${zmq.channel.pubTopic}")
     private String pubTopic;
 
+    @Value("#{${zmq.payload}}")
+    private Map<String,Object> payload;
+
     public OtmbItPublisher(final OtmbItDataMapper otmbItDataMapper, final ZeroMqMessageHandler zeroMqMessageHandler) {
         this.otmbItDataMapper = otmbItDataMapper;
         this.zeroMqMessageHandler = zeroMqMessageHandler;
     }
 
-    @Scheduled(fixedDelay = 60000, initialDelay = 10000)
+    @Scheduled(fixedDelay = 30000, initialDelay = 30000)
     public void scheduleMessagePublishTask() {
-        Map<String, Object> controlMessage = new HashMap<>();
-        controlMessage.put("DCTE.WinTms.AI55", 15);
         try {
             logger.info("=================================================================================");
-            logger.info("Publishing message {} to {}", otmbItDataMapper.toMapJson(controlMessage), pubTopic);
+            logger.info("Publishing message {} to {}", otmbItDataMapper.toMapJson(payload), pubTopic);
             logger.info("=================================================================================");
-            Message<?> testMessage = MessageBuilder.withPayload(otmbItDataMapper.toMapJson(controlMessage)).setHeader("topic", pubTopic).build();
+            Message<?> testMessage = MessageBuilder.withPayload(otmbItDataMapper.toMapJson(payload)).setHeader("topic", pubTopic).build();
             zeroMqMessageHandler.handleMessage(testMessage).subscribe();
         } catch (JsonProcessingException e) {
             logger.error("Failed to publish message", e);
